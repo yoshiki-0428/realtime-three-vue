@@ -1,8 +1,9 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
     <div id="stage">
     </div>
+    <button @click="interver(move)">↓</button>
+    <button @click="interver(moveRight)">→</button>
   </div>
 </template>
 
@@ -23,8 +24,13 @@ export default {
       geometry: this.geometry,
       material: this.material,
       mesh: this.mesh,
-      mixer: {},
+      mixer: undefined,
+      action: {},
       lastTime: 0,
+      keyFlame: {
+        x: [0],
+        y: [0]
+      }
     }
   },
   created() {
@@ -46,38 +52,11 @@ export default {
     this.material = new THREE.MeshNormalMaterial();
     this.mesh = new THREE.Mesh(new THREE.CubeGeometry(5, 5, 5), this.material);
 
-    const tracks = [];
-    // const x = this.mesh.position.x;
-    tracks.push({ name: `${this.mesh.uuid}.rotation[x]`,
-      type: 'vector',
-      times: [...Array(100).keys()],
-      values: [...Array(100).keys()]
-    });
-    tracks.push({ name: `${this.mesh.uuid}.rotation[y]`,
-      type: 'vector',
-      times: [...Array(100).keys()],
-      values: [...Array(100).keys()]
-    });
-
-        // new THREE.KeyframeTrack(`${this.mesh.uuid}.rotation[x]`, [...Array(10).keys()],
-        // [...Array(10).keys()]));
-    // tracks.push(new THREE.KeyframeTrack(`${this.mesh.uuid}.rotation[y]`, [...Array(10).keys()],
-    //     [...Array(10).keys()]));
-
     // === sceneにmodel,light, cameraを追加 ===
     this.scene.add(this.camera);
     this.scene.add(this.light);
     this.scene.add(this.mesh);
-
-    // animation
-    const clip = new THREE.AnimationClip.parse({ name: "aaa", duration: 10000, tracks: tracks });
-    console.log('clip', clip);
     this.mixer = new THREE.AnimationMixer(this.scene);
-    const action = this.mixer.clipAction(clip);
-    action.timeScale = 1;
-    action.time = 0;
-    action.setLoop(THREE.LoopRepeat, 10);
-    action.play();
     this.animate();
   },
   mounted() {
@@ -86,14 +65,46 @@ export default {
   },
   methods: {
     animate () {
-      // this.mesh.rotation.x += 0.01;
-      // this.mesh.rotation.z += 0.01;
-      this.mixer.update(0.2);
-
+      if (this.mixer) {
+        this.mixer.update(0.1);
+      }
       this.renderer.render(this.scene, this.camera);
       requestAnimationFrame(this.animate);
-    }
-  }
+    },
+    move() {
+      const tracks = [];
+      this.keyFlame.x.push(Math.max(...this.keyFlame.x) + 1);
+      tracks.push({ name: `${this.mesh.uuid}.rotation[x]`,
+        type: 'vector',
+        times: [...Array(this.keyFlame.x.length).keys()],
+        values: this.keyFlame.x
+      });
+      const clip = new THREE.AnimationClip.parse({ name: "hoge", duration: 5000, tracks: tracks });
+      this.action = this.mixer.clipAction(clip);
+      this.action.time = this.mixer.time;
+      console.log(this.mixer.time)
+      this.action.setLoop(THREE.LoopOnce, 1);
+      this.action.play();
+    },
+    moveRight() {
+      const tracks = [];
+      this.keyFlame.y.push(Math.max(...this.keyFlame.y) + 1);
+      tracks.push({ name: `${this.mesh.uuid}.rotation[y]`,
+        type: 'vector',
+        times: [...Array(this.keyFlame.y.length).keys()],
+        values: this.keyFlame.y
+      });
+      const clip = new THREE.AnimationClip.parse({ name: "hoge right", duration: 5000, tracks: tracks });
+      this.action = this.mixer.clipAction(clip);
+      this.action.time = this.mixer.time;
+      console.log(this.mixer.time)
+      this.action.setLoop(THREE.LoopOnce, 1);
+      this.action.play();
+    },
+    interver(func) {
+      setInterval(func, 500);
+    },
+  },
 }
 </script>
 
